@@ -3,6 +3,13 @@
 name: PowerAppsTestAutomation-$(date:yyyyMMdd)$(rev:.r)
 
 resources:
+  pipelines:
+  - pipeline: D365 CDCI pull solution
+    source: cadilu.PowerAppsTestAutomation
+    trigger:
+      branches:
+        include:
+        - master
   repositories:
     - repository: PowerAppsTestAutomation
       type: github
@@ -40,39 +47,47 @@ parameters:
    - FederatedIdentity # Uses a Custom Login Action method using AD FS 2.0 or other Security Token Services for authentication. Custom code is required.
    - PassThrough # Federated login scenario where the provided user credential is automatically logged in, requires special agent configurations
 
-jobs:
-- job: "PowerAppsTestFrameworkAutomation"
-  pool:
-    vmImage: ${{ parameters.image }}
-    demands:
-    - msbuild
-    - visualstudio
-    - vstest
-  variables:
-  - name: PortalUrl
-    value: https://make.powerapps.com
-    # Browser PrivateMode usage (true/false)
-  - name: PrivateMode
-    value: true
-    # FileName where TestAutomationURLs are stored in JSON format
-  - name: TestUrlFileName 
-    value: TestAutomationURLs.json
-    # Project name of repo containing TestAutomationURLs (spaces should be encoded as %20)
-    # Example: Contoso Test Framework --> Contoso%20Test%20Framework
-  - name: LocalProjectName
-    value: PowerAppsTestAutomation
+stages:
+- stage: Tests
+  jobs:
+  - job: "PowerAppsTestFrameworkAutomation"
+    pool:
+      vmImage: ${{ parameters.image }}
+      demands:
+      - msbuild
+      - visualstudio
+      - vstest
+    variables:
+    - name: PortalUrl
+      value: https://make.powerapps.com
+      # Browser PrivateMode usage (true/false)
+    - name: PrivateMode
+      value: true
+      # FileName where TestAutomationURLs are stored in JSON format
+    - name: TestUrlFileName 
+      value: TestAutomationURLs.json
+      # Project name of repo containing TestAutomationURLs (spaces should be encoded as %20)
+      # Example: Contoso Test Framework --> Contoso%20Test%20Framework
+    - name: LocalProjectName
+      value: PowerAppsTestAutomation
 
-  steps:
-  - checkout: self
-  - checkout: PowerAppsTestAutomation
-  #- template: localsteps.yml # Provide optional local YAML template here
-  - template: frameworksteps.yml@PowerAppsTestAutomation
-    parameters:
-      OnlineUsername: $(OnlineUsername)
-      OnlinePassword: $(OnlinePassword)
-      OnlineUrl: $(PortalUrl)
-      BrowserType: ${{ parameters.BrowserType }}
-      # File location format is /s/TeamProjectName/FilePathToTestAutomationURLs.json
-      TestAutomationURLFilePath: $(Build.SourcesDirectory)\$(LocalProjectName)\Samples\$(TestUrlFileName)
-      UsePrivateMode: $(PrivateMode)
-      LoginMethod: ${{ parameters.LoginMethod }}
+    steps:
+    - checkout: self
+    - checkout: PowerAppsTestAutomation
+    #- template: localsteps.yml # Provide optional local YAML template here
+    - template: frameworksteps.yml@PowerAppsTestAutomation
+      parameters:
+        OnlineUsername: $(OnlineUsername)
+        OnlinePassword: $(OnlinePassword)
+        OnlineUrl: $(PortalUrl)
+        BrowserType: ${{ parameters.BrowserType }}
+        # File location format is /s/TeamProjectName/FilePathToTestAutomationURLs.json
+        TestAutomationURLFilePath: $(Build.SourcesDirectory)\$(LocalProjectName)\Samples\$(TestUrlFileName)
+        UsePrivateMode: $(PrivateMode)
+        LoginMethod: ${{ parameters.LoginMethod }}
+
+- stage: Pull Results
+  condition: succeeded('Tests')
+  
+  jobs:
+  - job: TriggerPullPipeline
