@@ -3,13 +3,6 @@
 name: PowerAppsTestAutomation-$(date:yyyyMMdd)$(rev:.r)
 
 resources:
-  pipelines:
-  - pipeline: D365CDCIpullsolution
-    source: cadilu.PowerAppsTestAutomation
-    trigger:
-      branches:
-        include:
-        - master
   repositories:
     - repository: PowerAppsTestAutomation
       type: github
