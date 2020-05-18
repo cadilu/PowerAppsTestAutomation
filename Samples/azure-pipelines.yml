@@ -4,7 +4,7 @@ name: PowerAppsTestAutomation-$(date:yyyyMMdd)$(rev:.r)
 
 resources:
   pipelines:
-  - pipeline: D365 CDCI pull solution
+  - pipeline: D365CDCIpullsolution
     source: cadilu.PowerAppsTestAutomation
     trigger:
       branches:
