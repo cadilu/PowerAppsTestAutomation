@@ -84,3 +84,9 @@ stages:
   
   jobs:
   - job: TriggerPullPipeline
+
+    steps:
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo Doing something that depends on the previous stage
